@@ -1,0 +1,31 @@
+# Fichiers de compilation
+bin/
+obj/
+*.exe
+*.dll
+*.pdb
+
+# Fichiers de Visual Studio
+.vs/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# Fichiers temporaires
+*.log
+*.tmp
+*.bak
+*.swp
+*~.nib
+local.properties
+.settings/
+.loadpath
+.recommenders
+
+# Fichiers de sortie
+*.png
+*.jpg
+*.jpeg
+*.gif
+*.bmp 
