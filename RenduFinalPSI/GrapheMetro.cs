@@ -26,20 +26,20 @@ namespace RenduFinalPSI
         {
             CouleursLignes = new Dictionary<int, Color>
             {
-                { 1, Color.FromArgb(255, 0, 0) },      // Rouge
-                { 2, Color.FromArgb(0, 0, 255) },      // Bleu
-                { 3, Color.FromArgb(0, 128, 0) },      // Vert
-                { 4, Color.FromArgb(255, 165, 0) },    // Orange
-                { 5, Color.FromArgb(128, 0, 128) },    // Violet
-                { 6, Color.FromArgb(0, 128, 128) },    // Turquoise
-                { 7, Color.FromArgb(255, 0, 255) },    // Magenta
-                { 8, Color.FromArgb(128, 128, 0) },    // Olive
-                { 9, Color.FromArgb(0, 255, 0) },      // Lime
-                { 10, Color.FromArgb(255, 255, 0) },   // Jaune
-                { 11, Color.FromArgb(0, 255, 255) },   // Cyan
-                { 12, Color.FromArgb(255, 128, 0) },   // Orange foncé
-                { 13, Color.FromArgb(128, 0, 0) },     // Marron
-                { 14, Color.FromArgb(0, 128, 0) }      // Vert foncé
+                { 1, Color.FromArgb(255, 0, 0) },    
+                { 2, Color.FromArgb(0, 0, 255) },     
+                { 3, Color.FromArgb(0, 128, 0) },      
+                { 4, Color.FromArgb(255, 165, 0) },    
+                { 5, Color.FromArgb(128, 0, 128) },    
+                { 6, Color.FromArgb(0, 128, 128) },    
+                { 7, Color.FromArgb(255, 0, 255) },    
+                { 8, Color.FromArgb(128, 128, 0) },    
+                { 9, Color.FromArgb(0, 255, 0) },      
+                { 10, Color.FromArgb(255, 255, 0) },  
+                { 11, Color.FromArgb(0, 255, 255) },   
+                { 12, Color.FromArgb(255, 128, 0) },   
+                { 13, Color.FromArgb(128, 0, 0) },     
+                { 14, Color.FromArgb(0, 128, 0) }    
             };
         }
 
@@ -48,14 +48,14 @@ namespace RenduFinalPSI
             if (numeroLigne.EndsWith("bis"))
             {
                 string numeroBase = numeroLigne.Replace("bis", "");
-                return int.Parse(numeroBase) + 100; // On ajoute 100 pour les lignes bis
+                return int.Parse(numeroBase) + 100;
             }
             return int.Parse(numeroLigne);
         }
 
         private void ChargerDonnees()
         {
-            // Charger les stations
+
             string[] lignesStations = File.ReadAllLines("MetroParis(Noeuds).csv");
             for (int i = 1; i < lignesStations.Length; i++)
             {
@@ -78,7 +78,7 @@ namespace RenduFinalPSI
                 }
             }
 
-            // Charger les arcs
+
             string[] lignesArcs = File.ReadAllLines("MetroParis(Arcs).csv");
             for (int i = 1; i < lignesArcs.Length; i++)
             {
@@ -120,7 +120,6 @@ namespace RenduFinalPSI
             Dictionary<Station, Station> predecesseurs = new Dictionary<Station, Station>();
             List<Station> aVisiter = new List<Station>();
 
-            // init des distances
             foreach (var station in Stations)
             {
                 distances[station] = double.MaxValue;
@@ -130,21 +129,28 @@ namespace RenduFinalPSI
 
             while (aVisiter.Count > 0)
             {
-                // prendre la station la plus proche
                 Station stationCourante = aVisiter.OrderBy(s => distances[s]).First();
                 aVisiter.Remove(stationCourante);
 
-                // regarder les voisins
-                var arcsVoisins = Arcs.Where(a => a.StationDepart == stationCourante.Id);
-                foreach (var arc in arcsVoisins)
+                // Si on a atteint la station d'arrivée, on peut s'arrêter
+                if (stationCourante.Id == arriveeId)
+                {
+                    break;
+                }
+
+                // On regarde tous les arcs qui partent de la station courante
+                var arcsSortants = Arcs.Where(a => a.StationDepart == stationCourante.Id);
+                foreach (var arc in arcsSortants)
                 {
                     Station stationVoisine = Stations.FirstOrDefault(s => s.Id == arc.StationArrivee);
                     if (stationVoisine != null && aVisiter.Contains(stationVoisine))
                     {
-                        double nouveauTemps = distances[stationCourante] + 3; // 3 minutes entre stations
+                        double nouveauTemps = distances[stationCourante] + arc.TempsTrajet;
+                        
+                        // Si on change de ligne, on ajoute le temps de changement
                         if (stationVoisine.Ligne != stationCourante.Ligne)
                         {
-                            nouveauTemps += 2; // 2 minutes pour changement de ligne
+                            nouveauTemps += arc.TempsChangement;
                         }
 
                         if (nouveauTemps < distances[stationVoisine])
@@ -155,21 +161,25 @@ namespace RenduFinalPSI
                     }
                 }
 
-                // regarder les changements de ligne possibles
-                var stationsMemeEndroit = Stations.Where(s => 
-                    s.Latitude == stationCourante.Latitude && 
-                    s.Longitude == stationCourante.Longitude && 
-                    s.Id != stationCourante.Id);
-
-                foreach (var stationChangement in stationsMemeEndroit)
+                // On regarde aussi les arcs qui arrivent à la station courante
+                var arcsEntrants = Arcs.Where(a => a.StationArrivee == stationCourante.Id);
+                foreach (var arc in arcsEntrants)
                 {
-                    if (aVisiter.Contains(stationChangement))
+                    Station stationVoisine = Stations.FirstOrDefault(s => s.Id == arc.StationDepart);
+                    if (stationVoisine != null && aVisiter.Contains(stationVoisine))
                     {
-                        double nouveauTemps = distances[stationCourante] + 2; // 2 minutes pour changement de ligne
-                        if (nouveauTemps < distances[stationChangement])
+                        double nouveauTemps = distances[stationCourante] + arc.TempsTrajet;
+                        
+                        // Si on change de ligne, on ajoute le temps de changement
+                        if (stationVoisine.Ligne != stationCourante.Ligne)
                         {
-                            distances[stationChangement] = nouveauTemps;
-                            predecesseurs[stationChangement] = stationCourante;
+                            nouveauTemps += arc.TempsChangement;
+                        }
+
+                        if (nouveauTemps < distances[stationVoisine])
+                        {
+                            distances[stationVoisine] = nouveauTemps;
+                            predecesseurs[stationVoisine] = stationCourante;
                         }
                     }
                 }
@@ -199,30 +209,31 @@ namespace RenduFinalPSI
             Dictionary<Station, double> distances = new Dictionary<Station, double>();
             Dictionary<Station, Station> predecesseurs = new Dictionary<Station, Station>();
 
-            // init
             foreach (var station in Stations)
             {
                 distances[station] = double.MaxValue;
+                predecesseurs[station] = null;
             }
             distances[stationDepart] = 0;
+            predecesseurs[stationDepart] = stationDepart;
 
-            // relacher les arcs
             for (int i = 0; i < Stations.Count - 1; i++)
             {
                 bool changement = false;
 
-                // arcs normaux
+                // Parcours des arcs dans les deux sens
                 foreach (var arc in Arcs)
                 {
+                    // Sens normal
                     Station stationDepartArc = Stations.FirstOrDefault(s => s.Id == arc.StationDepart);
                     Station stationArriveeArc = Stations.FirstOrDefault(s => s.Id == arc.StationArrivee);
 
                     if (stationDepartArc != null && stationArriveeArc != null)
                     {
-                        double nouveauTemps = distances[stationDepartArc] + 3; // 3 minutes entre stations
+                        double nouveauTemps = distances[stationDepartArc] + arc.TempsTrajet;
                         if (stationArriveeArc.Ligne != stationDepartArc.Ligne)
                         {
-                            nouveauTemps += 2; // 2 minutes pour changement de ligne
+                            nouveauTemps += arc.TempsChangement;
                         }
 
                         if (distances[stationDepartArc] != double.MaxValue && nouveauTemps < distances[stationArriveeArc])
@@ -232,9 +243,25 @@ namespace RenduFinalPSI
                             changement = true;
                         }
                     }
+
+                    // Sens inverse
+                    if (stationDepartArc != null && stationArriveeArc != null)
+                    {
+                        double nouveauTemps = distances[stationArriveeArc] + arc.TempsTrajet;
+                        if (stationDepartArc.Ligne != stationArriveeArc.Ligne)
+                        {
+                            nouveauTemps += arc.TempsChangement;
+                        }
+
+                        if (distances[stationArriveeArc] != double.MaxValue && nouveauTemps < distances[stationDepartArc])
+                        {
+                            distances[stationDepartArc] = nouveauTemps;
+                            predecesseurs[stationDepartArc] = stationArriveeArc;
+                            changement = true;
+                        }
+                    }
                 }
 
-                // changements de ligne
                 foreach (var station in Stations)
                 {
                     var stationsMemeEndroit = Stations.Where(s => 
@@ -244,7 +271,7 @@ namespace RenduFinalPSI
 
                     foreach (var stationChangement in stationsMemeEndroit)
                     {
-                        double nouveauTemps = distances[station] + 2; // 2 minutes pour changement de ligne
+                        double nouveauTemps = distances[station] + 2; // temps de changement de ligne
                         if (distances[station] != double.MaxValue && nouveauTemps < distances[stationChangement])
                         {
                             distances[stationChangement] = nouveauTemps;
@@ -257,7 +284,6 @@ namespace RenduFinalPSI
                 if (!changement) break;
             }
 
-            // Afficher le temps total du trajet
             if (distances[stationArrivee] != double.MaxValue)
             {
                 Console.WriteLine("Temps total du trajet : " + distances[stationArrivee] + " minutes");
@@ -280,21 +306,27 @@ namespace RenduFinalPSI
 
             int n = Stations.Count;
             double[,] distances = new double[n, n];
-            Station[,] suivants = new Station[n, n];
+            Station[,] predecesseurs = new Station[n, n];
 
-            // init
+            // Initialisation
             for (int i = 0; i < n; i++)
             {
                 for (int j = 0; j < n; j++)
                 {
                     if (i == j)
+                    {
                         distances[i, j] = 0;
+                        predecesseurs[i, j] = Stations[i];
+                    }
                     else
+                    {
                         distances[i, j] = double.MaxValue;
+                        predecesseurs[i, j] = null;
+                    }
                 }
             }
 
-            // arcs directs
+            // Remplissage des distances initiales dans les deux sens
             foreach (var arc in Arcs)
             {
                 int i = Stations.FindIndex(s => s.Id == arc.StationDepart);
@@ -302,16 +334,25 @@ namespace RenduFinalPSI
 
                 if (i >= 0 && j >= 0)
                 {
-                    distances[i, j] = 3; // 3 minutes entre stations
+                    // Sens normal
+                    distances[i, j] = arc.TempsTrajet;
                     if (Stations[i].Ligne != Stations[j].Ligne)
                     {
-                        distances[i, j] += 2; // 2 minutes pour changement de ligne
+                        distances[i, j] += arc.TempsChangement;
                     }
-                    suivants[i, j] = Stations[j];
+                    predecesseurs[i, j] = Stations[i];
+
+                    // Sens inverse
+                    distances[j, i] = arc.TempsTrajet;
+                    if (Stations[j].Ligne != Stations[i].Ligne)
+                    {
+                        distances[j, i] += arc.TempsChangement;
+                    }
+                    predecesseurs[j, i] = Stations[j];
                 }
             }
 
-            // changements de ligne
+            // Ajout des temps de changement de ligne pour les stations au même endroit
             for (int i = 0; i < n; i++)
             {
                 var stationsMemeEndroit = Stations.Where(s => 
@@ -322,12 +363,14 @@ namespace RenduFinalPSI
                 foreach (var station in stationsMemeEndroit)
                 {
                     int j = Stations.IndexOf(station);
-                    distances[i, j] = 2; // 2 minutes pour changement de ligne
-                    suivants[i, j] = station;
+                    distances[i, j] = 2; // temps de changement de ligne
+                    distances[j, i] = 2; // temps de changement de ligne dans l'autre sens
+                    predecesseurs[i, j] = Stations[i];
+                    predecesseurs[j, i] = Stations[j];
                 }
             }
 
-            // floyd warshall
+            // Algorithme de Floyd-Warshall
             for (int k = 0; k < n; k++)
             {
                 for (int i = 0; i < n; i++)
@@ -340,14 +383,14 @@ namespace RenduFinalPSI
                             if (nouveauTemps < distances[i, j])
                             {
                                 distances[i, j] = nouveauTemps;
-                                suivants[i, j] = suivants[i, k];
+                                predecesseurs[i, j] = predecesseurs[k, j];
                             }
                         }
                     }
                 }
             }
 
-            // reconstruction du chemin
+            // Reconstruction du chemin
             List<Station> chemin = new List<Station>();
             int depart = Stations.IndexOf(stationDepart);
             int arrivee = Stations.IndexOf(stationArrivee);
@@ -357,16 +400,18 @@ namespace RenduFinalPSI
                 return null;
             }
 
-            // Afficher le temps total du trajet
             Console.WriteLine("Temps total du trajet : " + distances[depart, arrivee] + " minutes");
 
-            chemin.Add(stationDepart);
-            while (depart != arrivee)
+            chemin.Add(stationArrivee);
+            int current = arrivee;
+            while (current != depart)
             {
-                if (suivants[depart, arrivee] == null)
-                    break;
-                chemin.Add(suivants[depart, arrivee]);
-                depart = Stations.IndexOf(suivants[depart, arrivee]);
+                if (predecesseurs[depart, current] == null)
+                {
+                    return null;
+                }
+                current = Stations.IndexOf(predecesseurs[depart, current]);
+                chemin.Insert(0, Stations[current]);
             }
 
             return chemin;
@@ -377,12 +422,26 @@ namespace RenduFinalPSI
             var chemin = new List<Station>();
             var stationCourante = arrivee;
 
-            while (stationCourante != null)
+            // On commence par la station d'arrivée
+            chemin.Add(stationCourante);
+
+            // On remonte jusqu'à la station de départ
+            while (stationCourante != null && stationCourante.Id != depart.Id)
             {
+                if (!predecesseurs.ContainsKey(stationCourante) || predecesseurs[stationCourante] == null)
+                {
+                    Console.WriteLine("Erreur : pas de prédécesseur pour la station " + stationCourante.Nom);
+                    return null;
+                }
+                stationCourante = predecesseurs[stationCourante];
                 chemin.Insert(0, stationCourante);
-                if (stationCourante.Id == depart.Id)
-                    break;
-                stationCourante = predecesseurs.ContainsKey(stationCourante) ? predecesseurs[stationCourante] : null;
+            }
+
+            // Vérification que le chemin est complet
+            if (chemin.Count == 0 || chemin[0].Id != depart.Id)
+            {
+                Console.WriteLine("Erreur : chemin incomplet ou incorrect");
+                return null;
             }
 
             return chemin;
@@ -390,7 +449,6 @@ namespace RenduFinalPSI
 
         public void DessinerGraphe(string cheminFichier, List<Station> cheminPlusCourt = null)
         {
-            // Trouver les limites des coordonnées
             double minLong = double.MaxValue, maxLong = double.MinValue;
             double minLat = double.MaxValue, maxLat = double.MinValue;
 
@@ -402,7 +460,6 @@ namespace RenduFinalPSI
                 maxLat = Math.Max(maxLat, station.Latitude);
             }
 
-            // Ajouter une marge de 10%
             double margeLong = (maxLong - minLong) * 0.1;
             double margeLat = (maxLat - minLat) * 0.1;
             minLong -= margeLong;
@@ -410,17 +467,15 @@ namespace RenduFinalPSI
             minLat -= margeLat;
             maxLat += margeLat;
 
-            // Créer l'image avec des dimensions plus grandes
             int largeur = 3000;
             int hauteur = 3000;
             using (Bitmap bitmap = new Bitmap(largeur, hauteur))
             {
                 using (Graphics g = Graphics.FromImage(bitmap))
                 {
-                    // Fond blanc
                     g.Clear(Color.White);
 
-                    // Dessiner les arcs
+                    // Dessiner les arcs normaux
                     foreach (var arc in Arcs)
                     {
                         var stationDepart = Stations.Find(s => s.Id == arc.StationDepart);
@@ -433,18 +488,33 @@ namespace RenduFinalPSI
                             int x2 = (int)((stationArrivee.Longitude - minLong) / (maxLong - minLong) * largeur);
                             int y2 = (int)((stationArrivee.Latitude - minLat) / (maxLat - minLat) * hauteur);
 
-                            bool estDansChemin = cheminPlusCourt != null && 
-                                cheminPlusCourt.Contains(stationDepart) && 
-                                cheminPlusCourt.Contains(stationArrivee) &&
-                                cheminPlusCourt.IndexOf(stationDepart) + 1 == cheminPlusCourt.IndexOf(stationArrivee);
+                            bool estDansChemin = false;
+                            if (cheminPlusCourt != null)
+                            {
+                                for (int i = 0; i < cheminPlusCourt.Count - 1; i++)
+                                {
+                                    if ((cheminPlusCourt[i].Id == arc.StationDepart && cheminPlusCourt[i + 1].Id == arc.StationArrivee) ||
+                                        (cheminPlusCourt[i].Id == arc.StationArrivee && cheminPlusCourt[i + 1].Id == arc.StationDepart))
+                                    {
+                                        estDansChemin = true;
+                                        break;
+                                    }
+                                }
+                            }
 
-                            Color couleurLigne = estDansChemin ? Color.Red : 
+                            Color couleurLigne = estDansChemin ? Color.Blue : 
                                 (CouleursLignes.ContainsKey(stationDepart.Ligne) ? 
                                 CouleursLignes[stationDepart.Ligne] : Color.Gray);
 
-                            using (Pen pen = new Pen(couleurLigne, estDansChemin ? 4 : 2))
+                            using (Pen pen = new Pen(couleurLigne, estDansChemin ? 6 : 2))
                             {
                                 g.DrawLine(pen, x1, y1, x2, y2);
+                            }
+
+                            // Debug: afficher les arcs du chemin
+                            if (estDansChemin)
+                            {
+                                Console.WriteLine("Arc du chemin trouvé : " + stationDepart.Nom + " -> " + stationArrivee.Nom);
                             }
                         }
                     }
@@ -456,20 +526,50 @@ namespace RenduFinalPSI
                         int y = (int)((station.Latitude - minLat) / (maxLat - minLat) * hauteur);
 
                         bool estDansChemin = cheminPlusCourt != null && cheminPlusCourt.Contains(station);
-                        Color couleurLigne = estDansChemin ? Color.Red :
+                        bool estDepart = cheminPlusCourt != null && cheminPlusCourt.Count > 0 && station.Id == cheminPlusCourt[0].Id;
+                        bool estArrivee = cheminPlusCourt != null && cheminPlusCourt.Count > 0 && station.Id == cheminPlusCourt[cheminPlusCourt.Count - 1].Id;
+
+                        Color couleurLigne = estDansChemin ? Color.Blue :
                             (CouleursLignes.ContainsKey(station.Ligne) ? 
                             CouleursLignes[station.Ligne] : Color.Gray);
 
-                        // Dessiner le point coloré autour
+                        // Dessiner le cercle de la station
                         using (SolidBrush brush = new SolidBrush(couleurLigne))
+                        {
+                            g.FillEllipse(brush, x - 8, y - 8, 16, 16);
+                        }
+
+                        using (SolidBrush brush = new SolidBrush(Color.White))
                         {
                             g.FillEllipse(brush, x - 6, y - 6, 12, 12);
                         }
 
-                        // Dessiner le point noir central
-                        using (SolidBrush brush = new SolidBrush(Color.Black))
+                        // Dessiner les icônes pour départ et arrivée
+                        if (estDepart)
                         {
-                            g.FillEllipse(brush, x - 4, y - 4, 8, 8);
+                            using (Pen pen = new Pen(Color.Green, 3))
+                            {
+                                g.DrawRectangle(pen, x - 10, y - 10, 20, 20);
+                            }
+                            // Ajouter le texte "Départ"
+                            using (Font font = new Font("Arial", 10, FontStyle.Bold))
+                            using (SolidBrush brush = new SolidBrush(Color.Green))
+                            {
+                                g.DrawString("Départ", font, brush, x + 15, y - 20);
+                            }
+                        }
+                        else if (estArrivee)
+                        {
+                            using (Pen pen = new Pen(Color.Red, 3))
+                            {
+                                g.DrawEllipse(pen, x - 10, y - 10, 20, 20);
+                            }
+                            // Ajouter le texte "Arrivée"
+                            using (Font font = new Font("Arial", 10, FontStyle.Bold))
+                            using (SolidBrush brush = new SolidBrush(Color.Red))
+                            {
+                                g.DrawString("Arrivée", font, brush, x + 15, y - 20);
+                            }
                         }
 
                         // Dessiner le nom de la station
@@ -481,7 +581,6 @@ namespace RenduFinalPSI
                     }
                 }
 
-                // Sauvegarder l'image
                 bitmap.Save(cheminFichier);
             }
         }

@@ -1,0 +1,93 @@
+DESCRIPTION DU PROGRAMME LIV'IN PARIS
+
+1. CLASSE PRINCIPALE
+-------------------
+Program.cs
+- Point d'entrée de l'application
+- Gère le menu principal et la navigation
+- Affiche les menus selon le type d'utilisateur (admin, client, cuisinier)
+- Gère la connexion et l'inscription des utilisateurs
+
+2. GESTION DES UTILISATEURS
+--------------------------
+GestionAdmin.cs
+- Gère les fonctionnalités administrateur
+- Affiche les clients (par ordre alphabétique, adresse, montant)
+- Permet de modifier/supprimer des clients
+- Affiche les statistiques
+
+GestionClient.cs
+- Gère les fonctionnalités client
+- Permet de passer des commandes
+- Affiche les commandes passées
+- Permet de noter les commandes
+- Affiche les cuisiniers disponibles
+
+GestionCuisinier.cs
+- Gère les fonctionnalités cuisinier
+- Permet d'ajouter/modifier des plats
+- Affiche les commandes reçues
+- Gère les plats du jour
+
+3. GESTION DES COMMANDES
+-----------------------
+GestionCommande.cs
+- Gère la création et modification des commandes
+- Calcule les prix
+- Gère le statut des commandes
+- Permet d'ajouter des plats à une commande
+
+4. BASE DE DONNEES
+-----------------
+ConnexionBDD.cs
+- Gère la connexion à la base de données MySQL
+- Fournit des méthodes pour exécuter des requêtes
+- Gère les transactions
+
+5. GRAPHE ET ITINERAIRES
+-----------------------
+GrapheMetro.cs
+- Modélise le réseau du métro parisien
+- Implémente les algorithmes de plus court chemin
+- Permet de trouver le meilleur itinéraire
+
+6. STRUCTURES DE DONNEES
+-----------------------
+Station.cs
+- Représente une station de métro
+- Stocke les informations (nom, ligne, coordonnées)
+
+Ligne.cs
+- Représente une ligne de métro
+- Stocke les stations et les correspondances
+
+7. INTERFACE UTILISATEUR
+-----------------------
+InterfaceUtils.cs
+- Gère l'affichage console
+- Fournit des méthodes pour formater l'affichage
+- Gère les couleurs et la mise en page
+
+8. TESTS UNITAIRES
+-----------------
+Tests/
+- Contient les tests unitaires pour chaque classe
+- Vérifie le bon fonctionnement des fonctionnalités
+- Utilise une base de données de test
+
+9. FONCTIONNALITES PRINCIPALES
+----------------------------
+- Gestion des utilisateurs (inscription, connexion)
+- Gestion des plats et des commandes
+- Calcul d'itinéraires optimaux
+- Statistiques et rapports
+- Interface console intuitive
+- Base de données relationnelle
+- Tests unitaires
+
+10. SECURITE
+------------
+- Vérification des droits d'accès
+- Validation des entrées utilisateur
+- Gestion sécurisée des mots de passe
+- Protection contre les injections SQL 
